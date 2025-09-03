@@ -1,0 +1,126 @@
+// /var/www/eemami.dev/api/server.js
+const express = require('express');
+const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
+require('dotenv').config();
+
+const app = express();
+app.use(cors());
+app.use(express.json({ limit: '1mb' }));
+
+// ---- file-backed store (directory beside server.js) ----
+const DATA_DIR = path.join(__dirname, 'data');
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+
+const TABLES = {
+  static: path.join(DATA_DIR, 'static.json'),
+  perf: path.join(DATA_DIR, 'perf.json'),
+  activity: path.join(DATA_DIR, 'activity.json'),
+};
+for (const fp of Object.values(TABLES)) {
+  if (!fs.existsSync(fp)) fs.writeFileSync(fp, '[]', 'utf8');
+}
+const readTable  = (name) => JSON.parse(fs.readFileSync(TABLES[name], 'utf8'));
+const writeTable = (name, rows) => fs.writeFileSync(TABLES[name], JSON.stringify(rows, null, 2), 'utf8');
+const nextId     = (rows) => (rows.length ? Math.max(...rows.map(r => +r.id || 0)) + 1 : 1);
+const getById    = (rows, id) => rows.find(r => String(r.id) === String(id)) || null;
+
+// ---- health ----
+app.get('/api/health', (_req, res) => res.json({ ok: true, msg: 'API is working!' }));
+
+// ---- STATIC ----
+app.get('/api/static', (_req, res) => res.json(readTable('static')));
+app.get('/api/static/:id', (req, res) => {
+  const row = getById(readTable('static'), req.params.id);
+  if (!row) return res.status(404).json({ error: 'not_found' });
+  res.json(row);
+});
+app.post('/api/static', (req, res) => {
+  const rows = readTable('static');
+  const row = { id: nextId(rows), ts: Date.now(), ...req.body };
+  rows.push(row); writeTable('static', rows);
+  res.status(201).json(row);
+});
+app.put('/api/static/:id', (req, res) => {
+  const rows = readTable('static');
+  const i = rows.findIndex(r => String(r.id) === String(req.params.id));
+  if (i === -1) return res.status(404).json({ error: 'not_found' });
+  rows[i] = { ...rows[i], ...req.body, id: rows[i].id };
+  writeTable('static', rows); res.json(rows[i]);
+});
+app.delete('/api/static/:id', (req, res) => {
+  const rows = readTable('static');
+  const i = rows.findIndex(r => String(r.id) === String(req.params.id));
+  if (i === -1) return res.status(404).json({ error: 'not_found' });
+  const [removed] = rows.splice(i, 1); writeTable('static', rows);
+  res.json({ ok: true, removed });
+});
+
+// ---- PERF ----
+app.get('/api/perf', (_req, res) => res.json(readTable('perf')));
+app.get('/api/perf/:id', (req, res) => {
+  const row = getById(readTable('perf'), req.params.id);
+  if (!row) return res.status(404).json({ error: 'not_found' });
+  res.json(row);
+});
+app.post('/api/perf', (req, res) => {
+  const rows = readTable('perf');
+  const row = { id: nextId(rows), ts: Date.now(), ...req.body };
+  rows.push(row); writeTable('perf', rows);
+  res.status(201).json(row);
+});
+app.put('/api/perf/:id', (req, res) => {
+  const rows = readTable('perf');
+  const i = rows.findIndex(r => String(r.id) === String(req.params.id));
+  if (i === -1) return res.status(404).json({ error: 'not_found' });
+  rows[i] = { ...rows[i], ...req.body, id: rows[i].id };
+  writeTable('perf', rows); res.json(rows[i]);
+});
+app.delete('/api/perf/:id', (req, res) => {
+  const rows = readTable('perf');
+  const i = rows.findIndex(r => String(r.id) === String(req.params.id));
+  if (i === -1) return res.status(404).json({ error: 'not_found' });
+  const [removed] = rows.splice(i, 1); writeTable('perf', rows);
+  res.json({ ok: true, removed });
+});
+
+// ---- ACTIVITY (batch OK) ----
+app.get('/api/activity', (_req, res) => res.json(readTable('activity')));
+app.get('/api/activity/:id', (req, res) => {
+  const row = getById(readTable('activity'), req.params.id);
+  if (!row) return res.status(404).json({ error: 'not_found' });
+  res.json(row);
+});
+app.post('/api/activity', (req, res) => {
+  const rows = readTable('activity');
+  const items = Array.isArray(req.body) ? req.body : [req.body];
+  const created = items.map(it => {
+    const row = { id: nextId(rows), ts: it.ts || Date.now(), ...it };
+    rows.push(row); return row;
+  });
+  writeTable('activity', rows);
+  res.status(201).json({ ok: true, n: created.length, created });
+});
+app.put('/api/activity/:id', (req, res) => {
+  const rows = readTable('activity');
+  const i = rows.findIndex(r => String(r.id) === String(req.params.id));
+  if (i === -1) return res.status(404).json({ error: 'not_found' });
+  rows[i] = { ...rows[i], ...req.body, id: rows[i].id };
+  writeTable('activity', rows); res.json(rows[i]);
+});
+app.delete('/api/activity/:id', (req, res) => {
+  const rows = readTable('activity');
+  const i = rows.findIndex(r => String(r.id) === String(req.params.id));
+  if (i === -1) return res.status(404).json({ error: 'not_found' });
+  const [removed] = rows.splice(i, 1); writeTable('activity', rows);
+  res.json({ ok: true, removed });
+});
+
+// ---- index ----
+app.get('/api', (_req, res) => res.json({ ok: true, routes: Object.keys(TABLES) }));
+
+// ---- start (bind to localhost; port 3000 to match Apache) ----
+const port = Number(process.env.PORT) || 3000;
+app.listen(port, '127.0.0.1', () => console.log(`API listening on http://127.0.0.1:${port}`));
+

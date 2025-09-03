@@ -1,0 +1,27 @@
+# OS/editor
+.DS_Store
+Thumbs.db
+*.swp
+
+# Archives & dumps
+*.tgz
+*.zip
+dump_analytics/
+
+# Node API (inside public_html/api)
+public_html/api/node_modules/
+public_html/api/.env
+public_html/api/*.log
+public_html/api/data/
+public_html/api/*.db
+public_html/api/*.sqlite
+
+# PM2 runtime & logs (if you ever add them)
+.pm2/
+
+# Secrets/keys/certs
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx

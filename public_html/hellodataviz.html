@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Analytics DataViz – Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- ZingChart -->
+  <script src="https://cdn.zingchart.com/zingchart.min.js" defer></script>
+  <style>
+    :root{
+      --bg:#0b1220; --panel:#0f172a; --card:#0f172a; --muted:#9aa4b2; --fg:#e5e7eb; --accent:#60a5fa; --green:#34d399;
+      --border: rgba(255,255,255,.10); --radius:16px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:linear-gradient(180deg,#0b1220,#0a1120);color:var(--fg);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial}
+    header{position:sticky;top:0;z-index:20;background:rgba(11,18,32,.9);backdrop-filter:blur(6px);border-bottom:1px solid var(--border)}
+    .wrap{max-width:1280px;margin:0 auto;padding:16px}
+    h1{margin:0 0 6px;font-size:22px}
+    p.sub{margin:0;color:var(--muted);font-size:14px}
+
+    /* toolbar */
+    .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px}
+    .chip{display:flex;align-items:center;gap:6px;padding:8px 10px;border:1px solid var(--border);border-radius:12px;background:#10172b;font-size:14px;color:var(--fg)}
+    .chip select{background:transparent;border:0;color:inherit;font:inherit;outline:none}
+    .spacer{flex:1}
+    .btn{border:1px solid var(--border);background:#111a2e;color:var(--fg);padding:8px 12px;border-radius:12px;cursor:pointer}
+    .btn:hover{border-color:var(--accent)}
+    .toggle{border:1px solid var(--border);background:#111a2e;color:var(--fg);padding:8px 12px;border-radius:999px;cursor:pointer}
+    .toggle.on{box-shadow:0 0 0 2px rgba(96,165,250,.25) inset;border-color:var(--accent)}
+
+    main.wrap{display:grid;gap:16px;padding-top:16px}
+
+    /* KPI cards */
+    .kpis{display:grid;gap:12px;grid-template-columns:repeat(2,1fr)}
+    @media(min-width:900px){.kpis{grid-template-columns:repeat(4,1fr)}}
+    .kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;box-shadow:0 14px 36px rgba(0,0,0,.35)}
+    .kpi small{color:var(--muted)}
+    .kpi .v{font-size:26px;font-weight:700;margin-top:6px}
+    .kpi.ok{border-color:rgba(52,211,153,.35)}
+
+    /* chart cards */
+    .grid{display:grid;gap:16px;grid-template-columns:1fr}
+    @media(min-width:1100px){.grid{grid-template-columns:1fr 1fr}}
+    .full{grid-column:1/-1}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 14px 36px rgba(0,0,0,.35);padding:14px}
+    .titlebar{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+    .titlebar h2{margin:0;font-size:16px}
+    .chart{height:380px;border-radius:12px;overflow:hidden}
+    .chart.tall{height:440px}
+
+    /* status strip */
+    #status{display:none;margin-top:8px;color:#fbbf24}
+    .show{display:block}
+
+    /* zingchart colors */
+    .zc-dark .zc-body{background-color:#0b1220}
+  </style>
+</head>
+<body class="zc-dark">
+  <header>
+    <div class="wrap">
+      <h1>Analytics Data Visualization</h1>
+      <p class="sub">Live visuals from <code>static</code>, <code>perf</code>, and <code>activity</code>.</p>
+
+      <div class="toolbar">
+        <div class="chip">
+          Range:
+          <select id="range">
+            <option value="12h">Last 12 hours</option>
+            <option value="24h" selected>Last 24 hours</option>
+            <option value="7d">Last 7 days</option>
+            <option value="all">All time</option>
+          </select>
+        </div>
+        <div class="chip">
+          Page:
+          <select id="page"><option value="__all__" selected>All pages</option></select>
+        </div>
+        <div id="status" class="chip">Loading…</div>
+        <div class="spacer"></div>
+        <button id="refresh" class="btn">Refresh</button>
+        <button id="auto" class="toggle">Auto-Refresh: Off</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- KPI Row -->
+    <section class="kpis">
+      <div class="kpi"><small>Sessions</small><div id="kpi-sessions" class="v">–</div></div>
+      <div class="kpi"><small>Events</small><div id="kpi-events" class="v">–</div></div>
+      <div class="kpi ok"><small>Avg Load (ms)</small><div id="kpi-avg" class="v">–</div></div>
+      <div class="kpi"><small>p95 Load (ms)</small><div id="kpi-p95" class="v">–</div></div>
+    </section>
+
+    <!-- Charts -->
+    <section class="grid">
+      <div class="card full">
+        <div class="titlebar"><h2>Activity Over Time (click • scroll • keydown)</h2></div>
+        <div id="chart-line" class="chart tall"></div>
+      </div>
+
+      <div class="card">
+        <div class="titlebar"><h2>Avg vs p95 Load by Page</h2></div>
+        <div id="chart-bar" class="chart"></div>
+      </div>
+
+      <div class="card">
+        <div class="titlebar"><h2>Users by Language</h2></div>
+        <div id="chart-pie" class="chart"></div>
+      </div>
+
+      <div class="card full">
+        <div class="titlebar"><h2>Load Time Distribution (Histogram)</h2></div>
+        <div id="chart-hist" class="chart"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // ---------------- Config / helpers ----------------
+    const API = { activity:'/api/activity', perf:'/api/perf', stat:'/api/static' };
+    const fmtInt = n => (n ?? 0).toLocaleString();
+    const clamp = (x,a,b)=>Math.max(a,Math.min(b,x));
+    const p95 = arr => { if(!arr.length) return 0; const a=[...arr].sort((x,y)=>x-y); return a[Math.max(0,Math.ceil(0.95*a.length)-1)] };
+    const avg = arr => arr.length ? Math.round(arr.reduce((s,x)=>s+Number(x||0),0)/arr.length) : 0;
+    const bin = (arr, bins=20) => {
+      if (!arr.length) return {edges:[],freq:[]};
+      const min = Math.min(...arr), max = Math.max(...arr);
+      const step = (max-min||1)/bins;
+      const edges = Array.from({length:bins+1},(_,i)=>min+i*step);
+      const freq = Array(bins).fill(0);
+      for(const v of arr){ const i = Math.min(bins-1, Math.floor((v-min)/step)); freq[i]++ }
+      return {edges,freq};
+    };
+    const hrLabel = ts => {
+      const d = new Date(ts), h = String(d.getHours()).padStart(2,'0');
+      return `${d.getMonth()+1}/${d.getDate()} ${h}:00`;
+    };
+
+    // ZingChart base looks
+    const basePlot = {
+      backgroundColor:'#0b1220',
+      plotarea:{ margin:'58 48 60 58' },
+      legend:{ backgroundColor:'#0f172a', borderRadius:10, item:{ fontColor:'#e5e7eb' } },
+      tooltip:{ borderRadius:8, fontColor:'#e5e7eb', shadow:true },
+      scaleX:{ lineColor:'rgba(255,255,255,.15)', tick:{ lineColor:'rgba(255,255,255,.15)' }, item:{ fontColor:'#9aa4b2' } },
+      scaleY:{ lineColor:'rgba(255,255,255,.15)', tick:{ lineColor:'rgba(255,255,255,.15)' }, item:{ fontColor:'#9aa4b2' }, guide:{ lineStyle:'dashed', lineColor:'rgba(255,255,255,.12)' } }
+    };
+
+    // state
+    let autoTimer = null;
+
+    // ---------------- Fetch & transform ----------------
+    async function getJSON(url){ const r=await fetch(url,{credentials:'same-origin'}); if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
+
+    function getRangeMs() {
+      const key = document.getElementById('range').value;
+      const now = Date.now();
+      if (key==='12h') return {start: now-12*3600_000, end: now, step:'hour'};
+      if (key==='24h') return {start: now-24*3600_000, end: now, step:'hour'};
+      if (key==='7d')  return {start: now-7*24*3600_000, end: now, step:'day'};
+      return {start: 0, end: now, step:'day'};
+    }
+
+    function inRange(ts, start, end){ return typeof ts==='number' && ts>=start && ts<=end; }
+
+    //  Loading and  rendering
+    async function loadAll(){
+      setStatus('Loading…');
+
+      const pageSel = document.getElementById('page').value;
+      const {start,end,step} = getRangeMs();
+
+      const [activity, perf, stat] = await Promise.allSettled([
+        getJSON(API.activity), getJSON(API.perf), getJSON(API.stat)
+      ]);
+
+      const A = activity.value || [];
+      const P = perf.value || [];
+      const S = stat.value || [];
+
+      // ----- page list from perf + activity + static
+      const pages = new Set(['__all__']);
+      for (const x of [...P, ...A, ...S]) if (x.page) pages.add(x.page);
+      hydratePageOptions(pages);
+
+      // filter by range and  page
+      const byPage = p => pageSel==='__all__' ? true : (p.page===pageSel);
+      const af = A.filter(e => inRange(e.ts, start, end) && byPage(e));
+      const pf = P.filter(e => inRange(e.ts || e.ended_at || e.endedAt || Date.now(), start, end) && byPage(e));
+      const sf = S.filter(e => inRange(e.ts, start, end) && byPage(e));
+
+      // Key performance indics
+      const sessions = new Set();
+      for (const s of [...af,...pf,...sf]) if (s.session_id || s.sessionId) sessions.add(s.session_id || s.sessionId);
+      const eventsCount = af.length;
+      const loads = pf.map(r => Number(r.total_ms ?? r.totalLoadMs ?? 0)).filter(Boolean);
+      setKPI('kpi-sessions', fmtInt(sessions.size));
+      setKPI('kpi-events', fmtInt(eventsCount));
+      setKPI('kpi-avg', fmtInt(avg(loads)));
+      setKPI('kpi-p95', fmtInt(p95(loads)));
+
+      // Line activity over time bro this is suffering but fun!
+      const buckets = [];
+      if (step==='hour'){
+        const hours = Math.ceil((end-start)/3600_000);
+        for(let i=0;i<hours;i++) buckets.push({ t:start+i*3600_000, click:0, scroll:0, keydown:0 });
+        for (const e of af){
+          const i = clamp(Math.floor((e.ts-start)/3600_000),0,buckets.length-1);
+          const type = e.type || e.kind;
+          if (type==='click') buckets[i].click++;
+          else if (type==='scroll') buckets[i].scroll++;
+          else if (type==='keydown') buckets[i].keydown++;
+        }
+        renderLine(buckets.map(b=>hrLabel(b.t)), buckets.map(b=>b.click), buckets.map(b=>b.scroll), buckets.map(b=>b.keydown));
+      } else {
+        // days segmnts
+        const days = Math.ceil((end-start)/86400_000);
+        for(let i=0;i<days;i++) buckets.push({ t:start+i*86400_000, click:0, scroll:0, keydown:0 });
+        for (const e of af){
+          const i = clamp(Math.floor((e.ts-start)/86400_000),0,buckets.length-1);
+          const type = e.type || e.kind;
+          if (type==='click') buckets[i].click++;
+          else if (type==='scroll') buckets[i].scroll++;
+          else if (type==='keydown') buckets[i].keydown++;
+        }
+        renderLine(buckets.map(b=>new Date(b.t).toLocaleDateString()), buckets.map(b=>b.click), buckets.map(b=>b.scroll), buckets.map(b=>b.keydown));
+      }
+
+      // - Bar (avg & 95th by page
+      const pageMap = new Map();
+      for (const r of pf){
+        const page = r.page || '(unknown)';
+        const t = Number(r.total_ms ?? r.totalLoadMs ?? 0);
+        if (!t) continue;
+        if (!pageMap.has(page)) pageMap.set(page, []);
+        pageMap.get(page).push(t);
+      }
+      const topPages = Array.from(pageMap.entries()).sort((a,b)=>b[1].length-a[1].length).slice(0,8);
+      const labels = topPages.map(([p])=>p);
+      const avgs   = topPages.map(([,a])=>avg(a));
+      const p95s   = topPages.map(([,a])=>p95(a));
+      renderBar(labels, avgs, p95s);
+
+      // ----- Pie (language distribution)
+      const langCount = {};
+      for (const r of sf){
+        const lang = (r.language || r.lang || 'other').toLowerCase();
+        langCount[lang]=(langCount[lang]||0)+1;
+      }
+      const pieData = Object.entries(langCount).sort((a,b)=>b[1]-a[1]);
+      renderPie(pieData.slice(0,6), pieData.slice(6).reduce((s, [,n])=>s+n, 0));
+
+      // ----- Histogram (load times)
+      const hist = bin(loads, 18);
+      renderHist(hist);
+
+      setStatus('');
+    }
+
+    function hydratePageOptions(pages){
+      const sel = document.getElementById('page');
+      const val = sel.value;
+      const prev = new Set(Array.from(sel.options).map(o=>o.value));
+      const next = Array.from(pages);
+      if(next.length !== prev.size || next.some(v=>!prev.has(v))){
+        sel.innerHTML = '';
+        for(const p of next){
+          const opt = document.createElement('option');
+          opt.value = p; opt.textContent = (p==='__all__') ? 'All pages' : p;
+          sel.appendChild(opt);
+        }
+        if (next.includes(val)) sel.value = val;
+      }
+    }
+
+    function setKPI(id, v){ document.getElementById(id).textContent = v; }
+    function setStatus(msg){ const s=document.getElementById('status'); if(msg){ s.textContent=msg; s.classList.add('show'); } else { s.classList.remove('show'); } }
+
+    //  Chart rendering
+    function renderLine(labels, click, scroll, keydown){
+      const cfg = {
+        type:'line', ...basePlot,
+        series:[
+          { text:'click',  values:click },
+          { text:'scroll', values:scroll },
+          { text:'keydown', values:keydown }
+        ],
+        scaleX:{ ...basePlot.scaleX, labels }
+      };
+      zingchart.render({ id:'chart-line', data:cfg, height:'100%', width:'100%' });
+    }
+    function renderBar(labels, avgVals, p95Vals){
+      const cfg = {
+        type:'bar', ...basePlot,
+        scaleX:{ ...basePlot.scaleX, labels },
+        series:[
+          { text:'avg (ms)', values:avgVals },
+          { text:'p95 (ms)', values:p95Vals }
+        ]
+      };
+      zingchart.render({ id:'chart-bar', data:cfg, height:'100%', width:'100%' });
+    }
+    function renderPie(entries, others){
+      const series = entries.map(([t,n])=>({text:t, values:[n]}));
+      if (others) series.push({ text:'other', values:[others] });
+      const cfg = { type:'pie', ...basePlot, series };
+      zingchart.render({ id:'chart-pie', data:cfg, height:'100%', width:'100%' });
+    }
+    function renderHist({edges,freq}){
+      const labels = edges.length ? edges.slice(0,-1).map((e,i)=>`${Math.round(e)}–${Math.round(edges[i+1])}`) : [];
+      const cfg = { type:'bar', ...basePlot, scaleX:{ ...basePlot.scaleX, labels }, series:[{ text:'count', values:freq }] };
+      zingchart.render({ id:'chart-hist', data:cfg, height:'100%', width:'100%' });
+    }
+
+    // UI hooking
+    window.addEventListener('load', () => {
+      // first render will fetch real data
+      loadAll().catch(e => setStatus('Error: '+e.message));
+
+      // filters
+      document.getElementById('range').addEventListener('change', () => loadAll().catch(e=>setStatus('Error: '+e.message)));
+      document.getElementById('page').addEventListener('change', () => loadAll().catch(e=>setStatus('Error: '+e.message)));
+      document.getElementById('refresh').addEventListener('click', () => loadAll().catch(e=>setStatus('Error: '+e.message)));
+
+      // auto refreshingo
+      const btn = document.getElementById('auto');
+      btn.addEventListener('click', () => {
+        if (autoTimer){
+          clearInterval(autoTimer); autoTimer=null; btn.classList.remove('on'); btn.textContent='Auto-Refresh: Off';
+        } else {
+          autoTimer = setInterval(() => loadAll().catch(()=>{}), 30000);
+          btn.classList.add('on'); btn.textContent='Auto-Refresh: On';
+        }
+      });
+    });
+
+    //done bro!
+  </script>
+</body>
+</html>
+
