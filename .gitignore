@@ -8,13 +8,14 @@ Thumbs.db
 *.zip
 dump_analytics/
 
-# Node API (inside public_html/api)
-public_html/api/node_modules/
-public_html/api/.env
-public_html/api/*.log
-public_html/api/data/
-public_html/api/*.db
-public_html/api/*.sqlite
+# Node (all deps, wherever they live)
+node_modules/
+
+# Node API (api/)
+api/.env
+api/*.log
+api/*.db
+api/*.sqlite
 
 # PM2 runtime & logs (if you ever add them)
 .pm2/
