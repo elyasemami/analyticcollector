@@ -1,8 +1,13 @@
 // api/src/routes/perf.js
-const { collections } = require('../config/db');
+const { pool } = require('../config/db');
 const { makeCrudRouter } = require('./_crud');
 
-const router = makeCrudRouter(() => collections().Perf);
+const COLUMNS = [
+  'session_id', 'page', 'ts', 'started_at', 'ended_at',
+  'total_ms', 'navigation_entry', 'timing',
+];
+
+const router = makeCrudRouter('perf_logs', COLUMNS);
 
 router.post('/', async (req, res, next) => {
   try {
@@ -14,11 +19,16 @@ router.post('/', async (req, res, next) => {
       started_at: b.startedAt || null,
       ended_at: b.endedAt || null,
       total_ms: b.totalLoadMs || null,
-      navigationEntry: b.navigationEntry || null,
+      navigation_entry: b.navigationEntry || null,
       timing: b.timing || null,
     };
-    const { insertedId } = await collections().Perf.insertOne(doc);
-    res.status(201).json({ _id: insertedId, ...doc });
+    const { rows } = await pool.query(
+      `INSERT INTO perf_logs (${COLUMNS.join(', ')})
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+       RETURNING *`,
+      COLUMNS.map(c => doc[c]),
+    );
+    res.status(201).json(rows[0]);
   } catch (e) { next(e); }
 });
 

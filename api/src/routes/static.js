@@ -1,8 +1,14 @@
 // api/src/routes/static.js
-const { collections } = require('../config/db');
+const { pool } = require('../config/db');
 const { makeCrudRouter } = require('./_crud');
 
-const router = makeCrudRouter(() => collections().Static);
+const COLUMNS = [
+  'session_id', 'page', 'ts', 'ua', 'language',
+  'cookies_enabled', 'js_enabled', 'images_allowed', 'css_allowed',
+  'screen', 'window', 'connection',
+];
+
+const router = makeCrudRouter('static_logs', COLUMNS);
 
 router.post('/', async (req, res, next) => {
   try {
@@ -21,8 +27,13 @@ router.post('/', async (req, res, next) => {
       window: b.window || null,
       connection: b.connection || null,
     };
-    const { insertedId } = await collections().Static.insertOne(doc);
-    res.status(201).json({ _id: insertedId, ...doc });
+    const { rows } = await pool.query(
+      `INSERT INTO static_logs (${COLUMNS.join(', ')})
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+       RETURNING *`,
+      COLUMNS.map(c => doc[c]),
+    );
+    res.status(201).json(rows[0]);
   } catch (e) { next(e); }
 });
 

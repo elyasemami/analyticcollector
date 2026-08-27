@@ -1,31 +1,65 @@
 // api/src/config/db.js
-const { MongoClient } = require('mongodb');
+const { Pool } = require("pg");
 
-const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/analytics';
-const client = new MongoClient(uri, { maxPoolSize: 10 });
+const connectionString = process.env.DATABASE_URL || "postgresql://127.0.0.1:5432/analytics";
+const pool = new Pool({ connectionString, max: 10 });
 
-let db, Static, Perf, Activity;
+const TABLES = {
+  static: "static_logs",
+  perf: "perf_logs",
+  activity: "activity_logs",
+};
 
 async function connect() {
-  await client.connect();
-  db = client.db(); // db name from URI
-  Static = db.collection('static_logs');
-  Perf = db.collection('perf_logs');
-  Activity = db.collection('activity_logs');
-  await Promise.all([
-    Static.createIndex({ session_id: 1, ts: -1 }),
-    Perf.createIndex({ session_id: 1, ts: -1 }),
-    Activity.createIndex({ session_id: 1, ts: -1 }),
-  ]);
-  return { db, Static, Perf, Activity };
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS static_logs (
+      id BIGSERIAL PRIMARY KEY,
+      session_id TEXT,
+      page TEXT,
+      ts BIGINT,
+      ua TEXT,
+      language TEXT,
+      cookies_enabled BOOLEAN,
+      js_enabled BOOLEAN,
+      images_allowed BOOLEAN,
+      css_allowed BOOLEAN,
+      screen JSONB,
+      window JSONB,
+      connection TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    CREATE INDEX IF NOT EXISTS static_logs_session_ts_idx ON static_logs (session_id, ts DESC);
+
+    CREATE TABLE IF NOT EXISTS perf_logs (
+      id BIGSERIAL PRIMARY KEY,
+      session_id TEXT,
+      page TEXT,
+      ts BIGINT,
+      started_at DOUBLE PRECISION,
+      ended_at DOUBLE PRECISION,
+      total_ms INTEGER,
+      navigation_entry JSONB,
+      timing JSONB,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    CREATE INDEX IF NOT EXISTS perf_logs_session_ts_idx ON perf_logs (session_id, ts DESC);
+
+    CREATE TABLE IF NOT EXISTS activity_logs (
+      id BIGSERIAL PRIMARY KEY,
+      session_id TEXT,
+      page TEXT,
+      ts BIGINT,
+      kind TEXT,
+      payload JSONB,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    CREATE INDEX IF NOT EXISTS activity_logs_session_ts_idx ON activity_logs (session_id, ts DESC);
+  `);
+  return pool;
 }
 
 async function close() {
-  await client.close();
+  await pool.end();
 }
 
-function collections() {
-  return { db, Static, Perf, Activity };
-}
-
-module.exports = { client, connect, close, collections };
+module.exports = { pool, connect, close, TABLES };

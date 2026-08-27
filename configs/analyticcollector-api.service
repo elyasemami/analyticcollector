@@ -1,7 +1,7 @@
 [Unit]
-Description=analyticcollector API (Express + MongoDB monolith)
-After=network.target mongod.service
-Wants=mongod.service
+Description=analyticcollector API (Express + PostgreSQL monolith)
+After=network.target postgresql.service
+Wants=postgresql.service
 
 [Service]
 Type=simple

@@ -1,8 +1,10 @@
 // api/src/routes/activity.js
-const { collections } = require('../config/db');
+const { pool } = require('../config/db');
 const { makeCrudRouter } = require('./_crud');
 
-const router = makeCrudRouter(() => collections().Activity);
+const COLUMNS = ['session_id', 'page', 'ts', 'kind', 'payload'];
+
+const router = makeCrudRouter('activity_logs', COLUMNS);
 
 // batch OK: body may be a single event or an array of events
 router.post('/', async (req, res, next) => {
@@ -15,8 +17,19 @@ router.post('/', async (req, res, next) => {
       kind: it.type || it.kind || 'event',
       payload: it,
     }));
-    const result = await collections().Activity.insertMany(docs, { ordered: false });
-    res.status(201).json({ ok: true, n: result.insertedCount || docs.length, insertedIds: result.insertedIds });
+
+    const values = [];
+    const placeholders = docs.map((d, i) => {
+      const offset = i * COLUMNS.length;
+      values.push(...COLUMNS.map(c => d[c]));
+      return `(${COLUMNS.map((_, j) => `$${offset + j + 1}`).join(', ')})`;
+    }).join(', ');
+
+    const { rows } = await pool.query(
+      `INSERT INTO activity_logs (${COLUMNS.join(', ')}) VALUES ${placeholders} RETURNING id`,
+      values,
+    );
+    res.status(201).json({ ok: true, n: rows.length, ids: rows.map(r => r.id) });
   } catch (e) { next(e); }
 });
 

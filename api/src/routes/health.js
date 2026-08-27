@@ -1,12 +1,12 @@
 // api/src/routes/health.js
 const { Router } = require('express');
-const { collections } = require('../config/db');
+const { pool } = require('../config/db');
 
 const router = Router();
 
 router.get('/health', async (_req, res) => {
   try {
-    await collections().db.admin().command({ ping: 1 });
+    await pool.query('SELECT 1');
     res.json({ ok: true });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });

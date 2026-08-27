@@ -8,6 +8,6 @@ const port = Number(process.env.PORT) || 3000;
 
 connect()
   .then(() => app.listen(port, '127.0.0.1', () => console.log(`API on http://127.0.0.1:${port}`)))
-  .catch(err => { console.error('Mongo connect failed:', err); process.exit(1); });
+  .catch(err => { console.error('Postgres connect failed:', err); process.exit(1); });
 
 process.on('SIGINT', async () => { try { await close(); } finally { process.exit(0); } });
