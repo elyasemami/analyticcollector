@@ -20,6 +20,8 @@ api/*.sqlite
 # PM2 runtime & logs (if you ever add them)
 .pm2/
 
+# environment vars
+.env
 # Secrets/keys/certs
 *.pem
 *.key
