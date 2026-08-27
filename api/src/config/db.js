@@ -1,7 +1,8 @@
 // api/src/config/db.js
 const { Pool } = require("pg");
 
-const connectionString = process.env.DATABASE_URL || "postgresql://127.0.0.1:5432/analytics";
+const connectionString =
+  process.env.DATABASE_URL || "postgresql://127.0.0.1:5432/analyticcollector";
 const pool = new Pool({ connectionString, max: 10 });
 
 const TABLES = {
