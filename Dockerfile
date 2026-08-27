@@ -18,7 +18,7 @@ services:
       - DB_HOST=database
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=analytics_db
+      - DB_NAME=${DB_NAME}
       - DB_PORT=5432
     depends_on:
       - database    
@@ -28,7 +28,6 @@ services:
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-      DB_HOST: ${DB_HOST}
     volumes:
       - type: volume
         source: postgres_data

@@ -2,8 +2,13 @@
 const { Pool } = require("pg");
 
 const connectionString =
-  process.env.DATABASE_URL || "postgresql://127.0.0.1:5432/analyticcollector";
-const pool = new Pool({ connectionString, max: 10 });
+  process.env.DATABASE_URL || "postgresql://database:5432/analytics_db";
+const pool = new Pool({
+  connectionString,
+  max: 10,
+  host: "database",
+  port: 5432,
+});
 
 const TABLES = {
   static: "static_logs",
