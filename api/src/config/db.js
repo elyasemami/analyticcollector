@@ -2,7 +2,11 @@
 const { Pool } = require("pg");
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST, // Resolves to 'database' inside the Docker network
+  database: process.env.DB_NAME,
+  password: process.env.DB_PASSWORD,
+  port: 5432,
   max: Number(process.env.PGPOOL_MAX) || 10,
   idleTimeoutMillis: 30_000,
   connectionTimeoutMillis: 5_000,
@@ -93,7 +97,9 @@ async function initializeSchema() {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    await client.query("SELECT pg_advisory_xact_lock($1)", [SCHEMA_LOCK_KEY.toString()]);
+    await client.query("SELECT pg_advisory_xact_lock($1)", [
+      SCHEMA_LOCK_KEY.toString(),
+    ]);
     await client.query(SCHEMA_SQL);
     await client.query("COMMIT");
   } catch (err) {
@@ -112,7 +118,9 @@ async function connect({ retries = 10, delayMs = 1000 } = {}) {
       break;
     } catch (err) {
       if (attempt >= retries) throw err;
-      console.warn(`Postgres not ready (${attempt}/${retries}): ${err.message}`);
+      console.warn(
+        `Postgres not ready (${attempt}/${retries}): ${err.message}`,
+      );
       await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
   }
