@@ -1,35 +1,47 @@
 services:
- 
   proxy:
     image: nginx:latest
     ports:
-    - 80:80
+      - "80:80"
+      - "443:443"
     volumes:
-      - type: bind
-        source: ./public_html
-        target: /usr/share/nginx/html
+      - ./nginx.conf:/etc/nginx/default.conf
+      - ./html:/usr/share/nginx/html
+      - ./ssl:/etc/nginx/ssl:ro
     depends_on:
-      - api
+      api:
+        condition: service_started
+
   api:
     build: ./api
-    ports:
-    - "3000:3000"
+    # Pass the database credentials into your Node app
     environment:
-      - DB_HOST=database
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
-      - DB_PORT=5432
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      DB_HOST: database
     depends_on:
-      - database    
+      database:
+        condition: service_healthy
+
   database:
     image: postgres:16-alpine
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     volumes:
       - type: volume
         source: postgres_data
         target: /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
 volumes:
   postgres_data:

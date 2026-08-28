@@ -5,7 +5,7 @@ const { makeCrudRouter } = require('./_crud');
 const COLUMNS = [
   'session_id', 'page', 'ts', 'ua', 'language',
   'cookies_enabled', 'js_enabled', 'images_allowed', 'css_allowed',
-  'screen', 'window', 'connection',
+  'screen', 'viewport', 'connection',
 ];
 
 const router = makeCrudRouter('static_logs', COLUMNS);
@@ -24,7 +24,7 @@ router.post('/', async (req, res, next) => {
       images_allowed: !!b.imagesAllowed,
       css_allowed: !!b.cssAllowed,
       screen: b.screen || null,
-      window: b.window || null,
+      viewport: b.viewport || b.window || null,
       connection: b.connection || null,
     };
     const { rows } = await pool.query(
