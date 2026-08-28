@@ -15,8 +15,8 @@ that had accumulated across earlier homework iterations.
 | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Backend                                                         | 3 parallel APIs: `api/server.js` (Mongo, live), `public_html/api/` (file-backed prototype), `public_html/db.json` + `js/collector.js` (json-server mock) | 1 backend: `api/` (Express + PostgreSQL)                                                                                                                  |
 | `api/` structure                                                | Single 170-line `server.js` with routes, Mongo setup, and boot logic inline                                                                              | Split into `server.js` (entrypoint), `src/app.js`, `src/config/db.js`, `src/routes/{health,static,perf,activity}.js`, `src/middleware/errorHandler.js` |
-| Web server                                                      | Apache 2 (`configs/apache-vhost.eemami.dev.conf`), CGI via built-in `mod_cgi`                                                                            | nginx (`configs/nginx-eemami.dev.conf`), CGI via `fcgiwrap` (Perl/Python/C) + `php-fpm` (PHP); old vhost kept at `configs/legacy/` for rollback        |
-| Process management                                              | API started by hand (`node server.js`)                                                                                                                   | `configs/analyticcollector-api.service` — systemd unit, auto-restart                                                                                   |
+| Web server                                                      | Apache 2 (`configs/apache-vhost.eemami.dev.conf`), CGI via built-in `mod_cgi`                                                                            | Docker Compose (`compose.yaml`): nginx `proxy` service (`nginx/default.conf`) serves `public_html/` and reverse-proxies `/api/`; CGI demos retired         |
+| Process management                                              | API started by hand (`node server.js`)                                                                                                                   | `compose.yaml` `api` service — built from `api/Dockerfile`, restarted by Docker                                                                        |
 | `public_html/api/`                                              | Present: `serv.notext` prototype server, own `package.json`/lockfile, `data/*.json`                                                                      | Removed (superseded by `api/`)                                                                                                                         |
 | `public_html/db.json`, `db1.json`                               | Present: json-server mock data (`db1.json` was 0 bytes)                                                                                                  | Removed                                                                                                                                                |
 | `public_html/js/collector.js`                                   | Present, unreferenced by any page (superseded by `api_hooked_collector.js`)                                                                              | Removed                                                                                                                                                |
@@ -25,45 +25,45 @@ that had accumulated across earlier homework iterations.
 | `index1.html`, `database1.html`                                 | Present, unreferenced draft duplicates of `index.html`/`database.html`                                                                                   | Removed                                                                                                                                                |
 | `node_modules/` in git                                          | Two directories committed (`public_html/api/`, `public_html/learning_node/`) despite partial `.gitignore` rules                                          | Untracked; blanket `node_modules/` rule added to `.gitignore`                                                                                          |
 | `README.md`                                                     | 35 lines, Homework 2 (Python/PHP) links only                                                                                                             | Full project doc: architecture, directory layout, dev/deploy steps, API reference, all 4 CGI languages                                                 |
-| `public_html/cgi-bin/**`, live pages, `api_hooked_collector.js` | —                                                                                                                                                        | Untouched — these are graded coursework artifacts and the live collector, out of scope                                                                 |
+| `public_html/cgi-bin/**`                                        | Present — graded coursework CGI demos (Homework 2)                                                                                                       | Removed — retired along with Apache/`mod_cgi`; no CGI runner in the Docker setup                                                                        |
 
 ## Architecture
 
-One static site, one backend process — nginx is the only thing exposed to the internet, and it
-either serves a file directly, proxies to the API, or hands a request to a CGI runner.
+Three containers, wired together by `compose.yaml`. Only `proxy` is published to the host —
+it either serves a static file straight from `public_html/` or reverse-proxies to the API.
 
 ```
                         ┌─────────────────────────────────────────┐
-                        │                 nginx                   │
-  browser  ───443───▶   │  configs/nginx-eemami.dev.conf           │
-                        └───────────────┬───────────┬─────────────┘
-                                         │           │
-                    static files        │           │  /cgi-bin/**
-                    public_html/**      │           │  (fcgiwrap / php-fpm)
-                    (index.html,        │           ▼
-                     cgi-bin/, js/, …)  │   public_html/cgi-bin/
-                                        │   {c,perl,php,python}
-                                        │
-                              /api/**   ▼
+                        │        proxy (nginx:latest)              │
+  browser  ───:80───▶   │        nginx/default.conf                │
+                        └───────────────┬───────────────────────┘
+                                         │
+                    static files        │        /api/**
+                    public_html/**      │        proxy_pass http://api:3000
+                    (bind mount)        │
+                                         ▼
                         ┌───────────────────────────┐        ┌────────────┐
-                        │   api/  (Node/Express)     │──────▶ │ PostgreSQL │
-                        │   systemd: analyticcollector-api    └────────────┘
-                        └───────────────────────────┘
+                        │   api (Node/Express)       │──────▶ │  database  │
+                        │   built from api/Dockerfile │        │ (postgres) │
+                        └───────────────────────────┘        └────────────┘
 ```
 
 - **`api/`** — the single backend process (the "monolith"): one Express app, one PostgreSQL
-  connection, one systemd service. No separate microservices, no per-feature backends.
-- **`public_html/`** — everything nginx serves directly: the site itself plus the CGI homework
-  demos (Homework 2 — dynamic pages in C, Perl, PHP, and Python, run under `fcgiwrap`/`php-fpm`
-  instead of Apache's `mod_cgi`).
-- **`configs/`** — infrastructure-as-config for the server: the nginx vhost, the systemd unit for
-  the API, and the retired Apache vhost kept under `configs/legacy/` for rollback reference.
+  connection pool. No separate microservices, no per-feature backends.
+- **`public_html/`** — the static site, bind-mounted straight into the `proxy` container; nothing
+  else touches it.
+- **`nginx/default.conf`** — the `proxy` container's config: static files + the `/api/` reverse
+  proxy to the `api` service (docker-compose's built-in DNS resolves `api`/`database` by service
+  name, so there are no hardcoded IPs).
+- **`compose.yaml`** — defines and wires the three services (`proxy`, `api`, `database`) and the
+  `postgres_data` volume.
 
 ## Directory layout
 
 ```
 .
 ├── api/                          # the monolithic backend
+│   ├── Dockerfile
 │   ├── server.js                 # entrypoint: connect Postgres, app.listen
 │   ├── src/
 │   │   ├── app.js                # express() assembly (cors, json, routes, errors)
@@ -71,41 +71,49 @@ either serves a file directly, proxies to the API, or hands a request to a CGI r
 │   │   ├── routes/                # health.js, static.js, perf.js, activity.js
 │   │   └── middleware/errorHandler.js
 │   ├── package.json
-│   └── .env.example
-├── configs/
-│   ├── nginx-eemami.dev.conf     # active nginx vhost
-│   ├── analyticcollector-api.service   # systemd unit for api/
-│   └── legacy/apache-vhost.eemami.dev.conf   # retired, kept for reference
-└── public_html/                  # nginx document root
-    ├── index.html, database.html, hellodataviz.html, …
-    ├── js/api_hooked_collector.js   # ships static/perf/activity telemetry to /api/*
-    └── cgi-bin/                   # Homework 2: C / Perl / PHP / Python CGI demos
+│   └── .env.example              # standalone (non-Docker) dev config
+├── nginx/
+│   └── default.conf              # proxy service config: static + /api/ reverse proxy
+├── compose.yaml                  # proxy + api + database services
+├── .env.example                  # DB_USER / DB_PASSWORD / DB_NAME for compose.yaml
+└── public_html/                  # bind-mounted into the proxy container
+    ├── database.html, 404.html, …
+    ├── globals/theme.css         # shared site theme
+    └── js/api_hooked_collector.js   # ships static/perf/activity telemetry to /api/*
 ```
 
 ## Local development
 
+**Docker Compose (recommended — matches production):**
+
+```bash
+cp .env.example .env      # set DB_USER / DB_PASSWORD / DB_NAME
+docker compose up --build
+```
+
+Site on `http://localhost/`, API behind the proxy at `http://localhost/api/`.
+
+**Standalone API (no Docker), against a local/dev Postgres instance:**
+
 ```bash
 cd api
-cp .env.example .env      # set DATABASE_URL to a local/dev Postgres instance
+cp .env.example .env      # set DATABASE_URL
 npm install
 npm start                 # API on http://127.0.0.1:3000
 ```
 
-The static site can be served with anything (`npx serve public_html`, or point a local nginx at
-it using `configs/nginx-eemami.dev.conf` as a template) — just make sure `/api/` is proxied to
-port 3000 so `api_hooked_collector.js` and the dashboard grids (`database.html`, `hellodataviz.html`)
-can reach it.
+The static site can then be served with anything (`npx serve public_html`) — just make sure
+`/api/` is proxied to port 3000 (see `nginx/default.conf` for the shape) so
+`api_hooked_collector.js` and the `database.html` dashboard can reach it.
 
 ## Deployment
 
-1. `nginx -t` against `configs/nginx-eemami.dev.conf`, then reload nginx.
-2. Copy `configs/analyticcollector-api.service` to `/etc/systemd/system/`, then:
-   ```bash
-   systemctl daemon-reload
-   systemctl enable --now analyticcollector-api
-   ```
-3. Server packages required beyond Node + PostgreSQL: `nginx`, `fcgiwrap`, `php-fpm` (see comments
-   at the top of `configs/nginx-eemami.dev.conf`).
+```bash
+docker compose up -d --build
+```
+
+`proxy` is the only service published to the host (port 80); `api` and `database` are only
+reachable over the compose network. Postgres data persists in the `postgres_data` volume.
 
 ## API reference
 
@@ -122,12 +130,27 @@ All routes are mounted under `/api`.
 | POST           | `/api/activity`                   | Record one activity event, or a batch (array) |
 | GET/PUT/DELETE | `/api/{static,perf,activity}/:id` | Fetch, update, or delete a single record      |
 
-### Environment variables (`api/.env`)
+### Environment variables
 
-| Variable      | Default                               | Description             |
-| ------------- | ------------------------------------- | ----------------------- |
-| `DATABASE_URL` | `postgresql://127.0.0.1:5432/analytics` | Postgres connection string |
-| `PORT`        | `3000`                                | API listen port         |
+Docker Compose (`.env` at repo root, read by `compose.yaml`):
+
+| Variable      | Description                                    |
+| ------------- | ----------------------------------------------- |
+| `DB_USER`     | Postgres user (also `api`'s `DB_USER`)           |
+| `DB_PASSWORD` | Postgres password                                |
+| `DB_NAME`     | Database name created on first `database` boot   |
+
+Standalone API dev (`api/.env`, only used when running `api/` outside Docker):
+
+| Variable       | Default                               | Description                                                    |
+| -------------- | -------------------------------------- | ---------------------------------------------------------------- |
+| `DATABASE_URL` | *(unset — falls back to `DB_*` below)* | Full Postgres connection string, takes precedence over `DB_*`  |
+| `DB_HOST`      | `127.0.0.1`                            | Postgres host                                                    |
+| `DB_PORT`      | `5432`                                 | Postgres port                                                    |
+| `DB_USER`      | `postgres`                             | Postgres user                                                    |
+| `DB_PASSWORD`  | `postgres`                             | Postgres password                                                |
+| `DB_NAME`      | `analytics`                            | Database name                                                    |
+| `PORT`         | `3000`                                 | API listen port                                                  |
 
 ## Author
 

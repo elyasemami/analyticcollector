@@ -1,37 +1,15 @@
-services:  
-  proxy:
-    image: nginx:latest
-    ports:
-    - 80:80
-    volumes:
-      - type: bind
-        source: ./public_html
-        target: /usr/share/nginx/html
-    depends_on:
-      - api
+FROM node:20-alpine
 
-  api:
-    build: ./api
-    ports:
-    - "3000:3000"
-    environment:
-      - DB_HOST=database
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
-      - DB_PORT=5432
-    depends_on:
-      - database    
-  
-  database:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-    volumes:
-      - type: volume
-        source: postgres_data
-        target: /var/lib/postgresql/data
+WORKDIR /app
 
-volumes:
-  postgres_data:
+COPY package*.json ./
+
+RUN npm install
+
+COPY . .
+
+ENV PORT=3000
+
+EXPOSE 3000
+
+CMD ["node", "server.js"]
