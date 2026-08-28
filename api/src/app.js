@@ -12,7 +12,6 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: "2mb" }));
 
-// helpful to debug proxy paths
 app.use((req, _res, next) => {
   console.log(req.method, req.url);
   next();
