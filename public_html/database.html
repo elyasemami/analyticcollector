@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Analytics Data</title>
+  <title>AnalyticCollector · Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.zinggrid.com/zinggrid.min.js" defer></script>
   <link rel="stylesheet" href="/globals/theme.css" />
@@ -10,18 +10,41 @@
 <body>
   <header class="site-header">
     <div class="wrap">
-      <h1>Analytics Data</h1>
-      <p>Live, DataViz!</p>
+      <div class="brand">
+        <div class="brand-mark">&lt;/&gt;</div>
+        <div class="brand-text">
+          <h1>AnalyticCollector</h1>
+          <p>Live client-side telemetry dashboard</p>
+        </div>
+      </div>
+      <div class="header-side">
+        <span class="live-pill"><span class="live-dot" aria-hidden="true"></span>live</span>
+        <span class="clock mono" id="clock"></span>
+      </div>
     </div>
   </header>
 
   <div class="tabs-row">
     <div class="wrap">
       <div class="tabs" role="tablist" aria-label="Datasets">
-        <button class="tab active" role="tab" aria-selected="true" aria-controls="panel-static" data-target="panel-static" aria-current="page">Static</button>
-        <button class="tab" role="tab" aria-selected="false" aria-controls="panel-perf" data-target="panel-perf">Performance</button>
-        <button class="tab" role="tab" aria-selected="false" aria-controls="panel-activity" data-target="panel-activity">Activity</button>
+        <button class="tab active" role="tab" aria-selected="true" aria-controls="panel-static" data-target="panel-static" data-crumb="api / static" aria-current="page">
+          <span class="tab-dot" style="background:var(--blue)"></span>Static
+        </button>
+        <button class="tab" role="tab" aria-selected="false" aria-controls="panel-perf" data-target="panel-perf" data-crumb="api / perf">
+          <span class="tab-dot" style="background:var(--teal)"></span>Performance
+        </button>
+        <button class="tab" role="tab" aria-selected="false" aria-controls="panel-activity" data-target="panel-activity" data-crumb="api / activity">
+          <span class="tab-dot" style="background:var(--yellow)"></span>Activity
+        </button>
       </div>
+    </div>
+  </div>
+
+  <div class="crumbs">
+    <div class="wrap">
+      <span>analyticcollector</span>
+      <span class="sep">/</span>
+      <span class="current" id="crumb-current">api / static</span>
     </div>
   </div>
 
@@ -30,24 +53,30 @@
       <!-- Static -->
       <section id="panel-static" class="panel active" role="tabpanel" aria-labelledby="tab-static">
         <div class="card">
-          <div class="toolbar">
-            <strong>Static Snapshots</strong>
-            <div class="spacer"></div>
-            <button class="btn" data-refresh="#grid-static">Reload</button>
+          <div class="card-head">
+            <span class="tab-dot" style="background:var(--blue)"></span>
+            <span class="title">Static Snapshots</span>
+            <span class="spacer"></span>
+            <button class="btn" data-refresh="#grid-static">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.5 8a5.5 5.5 0 1 1-1.7-3.98M13.5 2.5v3.5H10"/></svg>
+              Reload
+            </button>
           </div>
-          <div class="grid-shell" id="shell-static">
-            <zing-grid id="grid-static" src="/api/static" pager page-size="15" search sort>
-              <zg-column index="id" header="id" width="90"></zg-column>
-              <zg-column index="session_id" header="session" width="180"></zg-column>
-              <zg-column index="page" header="page" width="180"></zg-column>
-              <zg-column index="ts" header="timestamp" type="datetime" width="180"></zg-column>
-              <zg-column index="language" header="lang" width="90"></zg-column>
-              <zg-column index="cookies_enabled" header="cookies" type="boolean" width="90"></zg-column>
-              <zg-column index="js_enabled" header="js" type="boolean" width="70"></zg-column>
-              <zg-column index="images_allowed" header="images" type="boolean" width="90"></zg-column>
-              <zg-column index="css_allowed" header="css" type="boolean" width="70"></zg-column>
-              <zg-column index="connection" header="net" width="90"></zg-column>
-            </zing-grid>
+          <div class="card-body">
+            <div class="grid-shell" id="shell-static">
+              <zing-grid id="grid-static" src="/api/static" pager page-size="15" search sort>
+                <zg-column index="id" header="id" width="90"></zg-column>
+                <zg-column index="session_id" header="session" width="180"></zg-column>
+                <zg-column index="page" header="page" width="180"></zg-column>
+                <zg-column index="ts" header="timestamp" type="datetime" width="180"></zg-column>
+                <zg-column index="language" header="lang" width="90"></zg-column>
+                <zg-column index="cookies_enabled" header="cookies" type="boolean" width="90"></zg-column>
+                <zg-column index="js_enabled" header="js" type="boolean" width="70"></zg-column>
+                <zg-column index="images_allowed" header="images" type="boolean" width="90"></zg-column>
+                <zg-column index="css_allowed" header="css" type="boolean" width="70"></zg-column>
+                <zg-column index="connection" header="net" width="90"></zg-column>
+              </zing-grid>
+            </div>
           </div>
         </div>
       </section>
@@ -55,21 +84,27 @@
       <!-- Performance -->
       <section id="panel-perf" class="panel" role="tabpanel" aria-labelledby="tab-perf">
         <div class="card">
-          <div class="toolbar">
-            <strong>Performance</strong>
-            <div class="spacer"></div>
-            <button class="btn" data-refresh="#grid-perf">Reload</button>
+          <div class="card-head">
+            <span class="tab-dot" style="background:var(--teal)"></span>
+            <span class="title">Performance</span>
+            <span class="spacer"></span>
+            <button class="btn" data-refresh="#grid-perf">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.5 8a5.5 5.5 0 1 1-1.7-3.98M13.5 2.5v3.5H10"/></svg>
+              Reload
+            </button>
           </div>
-          <div class="grid-shell" id="shell-perf">
-            <zing-grid id="grid-perf" src="/api/perf" pager page-size="15" search sort>
-              <zg-column index="id" header="id" width="90"></zg-column>
-              <zg-column index="session_id" header="session" width="180"></zg-column>
-              <zg-column index="page" header="page" width="200"></zg-column>
-              <zg-column index="total_ms" header="total ms" type="number" width="110"></zg-column>
-              <zg-column index="started_at" header="started" type="datetime" width="180"></zg-column>
-              <zg-column index="ended_at" header="ended" type="datetime" width="180"></zg-column>
-              <zg-column index="nav_type" header="nav.type" width="110"></zg-column>
-            </zing-grid>
+          <div class="card-body">
+            <div class="grid-shell" id="shell-perf">
+              <zing-grid id="grid-perf" src="/api/perf" pager page-size="15" search sort>
+                <zg-column index="id" header="id" width="90"></zg-column>
+                <zg-column index="session_id" header="session" width="180"></zg-column>
+                <zg-column index="page" header="page" width="200"></zg-column>
+                <zg-column index="total_ms" header="total ms" type="number" width="110"></zg-column>
+                <zg-column index="started_at" header="started" type="datetime" width="180"></zg-column>
+                <zg-column index="ended_at" header="ended" type="datetime" width="180"></zg-column>
+                <zg-column index="nav_type" header="nav.type" width="110"></zg-column>
+              </zing-grid>
+            </div>
           </div>
         </div>
       </section>
@@ -77,36 +112,51 @@
       <!-- Activity -->
       <section id="panel-activity" class="panel" role="tabpanel" aria-labelledby="tab-activity">
         <div class="card">
-          <div class="toolbar">
-            <strong>Activity Events</strong>
-            <div class="spacer"></div>
-            <button class="btn" data-refresh="#grid-activity">Reload</button>
+          <div class="card-head">
+            <span class="tab-dot" style="background:var(--yellow)"></span>
+            <span class="title">Activity Events</span>
+            <span class="spacer"></span>
+            <button class="btn" data-refresh="#grid-activity">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.5 8a5.5 5.5 0 1 1-1.7-3.98M13.5 2.5v3.5H10"/></svg>
+              Reload
+            </button>
           </div>
-          <div class="grid-shell" id="shell-activity">
-            <zing-grid id="grid-activity" src="/api/activity" pager page-size="25" search sort>
-              <zg-column index="id" header="id" width="90"></zg-column>
-              <zg-column index="session_id" header="session" width="180"></zg-column>
-              <zg-column index="page" header="page" width="200"></zg-column>
-              <zg-column index="ts" header="timestamp" type="datetime" width="180"></zg-column>
-              <zg-column index="kind" header="kind" width="120"></zg-column>
-              <zg-column index="type" header="type" width="140"></zg-column>
-            </zing-grid>
+          <div class="card-body">
+            <div class="grid-shell" id="shell-activity">
+              <zing-grid id="grid-activity" src="/api/activity" pager page-size="25" search sort>
+                <zg-column index="id" header="id" width="90"></zg-column>
+                <zg-column index="session_id" header="session" width="180"></zg-column>
+                <zg-column index="page" header="page" width="200"></zg-column>
+                <zg-column index="ts" header="timestamp" type="datetime" width="180"></zg-column>
+                <zg-column index="kind" header="kind" width="120"></zg-column>
+                <zg-column index="type" header="type" width="140"></zg-column>
+              </zing-grid>
+            </div>
           </div>
         </div>
       </section>
     </div>
   </main>
 
+  <footer class="site-footer">
+    <div class="wrap">
+      <span>analyticcollector · client telemetry pipeline</span>
+      <a href="https://github.com/" target="_blank" rel="noopener">source</a>
+    </div>
+  </footer>
+
   <script>
     const tabs = document.querySelectorAll('.tab');
     const panels = document.querySelectorAll('.panel');
+    const crumbCurrent = document.getElementById('crumb-current');
 
     function setActive(targetId){
       tabs.forEach(b=>{
         const on = b.dataset.target===targetId;
         b.classList.toggle('active', on);
         b.setAttribute('aria-selected', on ? 'true' : 'false');
-        if (on) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current');
+        if (on) { b.setAttribute('aria-current','page'); crumbCurrent.textContent = b.dataset.crumb; }
+        else b.removeAttribute('aria-current');
       });
       panels.forEach(p=>p.classList.toggle('active', p.id===targetId));
       setHeights();
@@ -122,22 +172,29 @@
         if (!grid) return;
         const shell = grid.closest('.grid-shell');
         shell.classList.add('loading');
+        btn.classList.add('is-loading');
         const base = (grid.getAttribute('src') || '').split('?')[0];
         grid.setAttribute('src', base + '?_ts=' + Date.now());
-        const onReady = () => { shell.classList.remove('loading'); grid.removeEventListener('zg-ready', onReady); };
+        const onReady = () => {
+          shell.classList.remove('loading');
+          btn.classList.remove('is-loading');
+          grid.removeEventListener('zg-ready', onReady);
+        };
         grid.addEventListener('zg-ready', onReady, { once:true });
       });
     });
 
     const header = document.querySelector('header');
     const tabsRow = document.querySelector('.tabs-row');
+    const crumbs = document.querySelector('.crumbs');
     const shells = document.querySelectorAll('.grid-shell');
 
     function setHeights(){
       const vh = Math.max(window.innerHeight, document.documentElement.clientHeight || 0);
       const headerH = header.getBoundingClientRect().height;
       const tabsH   = tabsRow.getBoundingClientRect().height;
-      const chrome  = headerH + tabsH + 32 + 24;
+      const crumbsH = crumbs.getBoundingClientRect().height;
+      const chrome  = headerH + tabsH + crumbsH + 32 + 90;
       const avail   = Math.max(420, vh - chrome);
 
       panels.forEach(panel=>{
@@ -148,7 +205,7 @@
           const grid = shell.querySelector('zing-grid');
           if (grid) grid.style.height = '100%';
         } else {
-          shell.style.height = ''; 
+          shell.style.height = '';
         }
       });
     }
@@ -158,7 +215,15 @@
     setTimeout(setHeights, 150);
 
     setActive('panel-static');
+
+    const clockEl = document.getElementById('clock');
+    function tickClock(){
+      const d = new Date();
+      const pad = n => String(n).padStart(2,'0');
+      clockEl.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    }
+    tickClock();
+    setInterval(tickClock, 1000);
   </script>
 </body>
 </html>
-
