@@ -9,8 +9,20 @@ const activityRoutes = require("./routes/activity");
 const { errorHandler } = require("./middleware/errorHandler");
 
 const app = express();
-app.use(cors());
-app.use(express.json({ limit: "2mb" }));
+app.set("trust proxy", 1);
+
+app.use(express.json({ limit: "16kb" }));
+const ALLOWED = new Set(["https://eemami.dev", "https://www.eemami.dev"]);
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin || ALLOWED.has(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Blocked by cors policy."));
+    }
+  },
+};
+app.use(cors(corsOptions));
 
 app.use((req, _res, next) => {
   console.log(req.method, req.url);
@@ -21,7 +33,7 @@ app.use("/api", healthRoutes);
 app.use("/api/static", staticRoutes);
 app.use("/api/perf", perfRoutes);
 app.use("/api/activity", activityRoutes);
-
+app.use("/api/collect", collectRoutes);
 app.use(errorHandler);
 
 module.exports = app;
