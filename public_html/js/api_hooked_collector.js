@@ -15,13 +15,13 @@
 
 (() => {
   // ---------- Config ----------
-  const API_BASE = "/api";
+  const API_BASE = "https://eemami.dev";
   const STATIC_URL = API_BASE + "/static";
   const PERF_URL = API_BASE + "/perf";
   const ACT_URL = API_BASE + "/activity";
 
-  const QKEY = "cse135_queue";
-  const SKEY = "cse135_session";
+  const QKEY = "queue";
+  const SKEY = "session";
   const FLUSH_MS = 5000; // periodic flush
   const MAX_BATCH = 50; // batch size to POST
   const IDLE_MS = 2000; // idle threshold
