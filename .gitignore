@@ -33,3 +33,5 @@ ssl_certs/
 *.crt
 *.p12
 *.pfx
+
+getdone.md
