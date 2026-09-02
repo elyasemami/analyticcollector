@@ -58,7 +58,6 @@
   async function postJSON(url, payload, opts = { keepalive: false }) {
     const body = JSON.stringify(payload);
 
-    // Use Beacon on unload or when keepalive requested
     if (opts.keepalive && "sendBeacon" in navigator) {
       const blob = new Blob([body], { type: "application/json" });
       return navigator.sendBeacon(url, blob);

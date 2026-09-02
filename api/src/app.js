@@ -12,8 +12,12 @@ const app = express();
 app.set("trust proxy", 1);
 
 app.use(express.json({ limit: "16kb" }));
-app.use(cors());
 
+var corsOptions = {
+  origin: "https://eemami.dev",
+  optionsSuccessStatus: 200,
+};
+app.use(cors(corsOptions));
 app.use((req, _res, next) => {
   console.log(req.method, req.url);
   next();
