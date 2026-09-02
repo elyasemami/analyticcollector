@@ -15,7 +15,7 @@
 
 (() => {
   // ---------- Config ----------
-  const API_BASE = "https://stats.eemami.dev";
+  const API_BASE = "https://stats.eemami.dev/api";
   const STATIC_URL = API_BASE + "/static";
   const PERF_URL = API_BASE + "/perf";
   const ACT_URL = API_BASE + "/activity";
