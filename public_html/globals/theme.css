@@ -466,19 +466,76 @@ main {
 /* ---------- ZingGrid theming ---------- */
 .grid-shell {
   position: relative;
+  overflow-x: auto; /* keep an overflowing grid inside the card instead of
+                        blowing out past .wrap */
+  max-width: 100%;
 }
 
 zing-grid {
   display: block;
+  width: 100%;
+  max-width: 100%;
   min-height: 420px; /* floor */
+
+  /* Base theme tokens — most of ZingGrid's component-level variables
+     fall back to these, so set them first. */
+  --theme-background-color: var(--bg);
+  --theme-body-color: var(--fg);
+  --theme-border-color: var(--border-dim);
+  --theme-color: var(--fg-muted);
   --theme-color-primary: var(--focus);
-  --zg-bg: var(--bg);
-  --zg-header-bg: var(--bg-raised);
-  --zg-header-color: var(--fg-muted);
-  --zg-border-color: var(--border-dim);
-  --zg-text-color: var(--fg);
-  --zg-row-hover-bg: var(--bg-hover);
-  --zg-font: var(--font-sans);
+  --theme-color-secondary: var(--blue);
+  --theme-color-light: var(--fg-subtle);
+  --theme-color-lighter: var(--bg-hover);
+  --theme-font-family: var(--font-sans);
+
+  /* Body / cells */
+  --zg-body-background: var(--bg);
+  --zg-body-color: var(--fg);
+  --zg-body-border: 1px solid var(--border-dim);
+  --zg-body-font-family: var(--font-sans);
+  --zg-cell-border: 1px solid var(--border-dim);
+  --zg-cell-background_hover: var(--bg-hover);
+  --zg-row-body-background: var(--bg);
+  --zg-row-body-background_hover: var(--bg-hover);
+  --zg-row-body-color: var(--fg);
+  --zg-row-body-border: 1px solid var(--border-dim);
+
+  /* Column header row */
+  --zg-header-background: var(--bg-raised);
+  --zg-head-background: var(--bg-raised);
+  --zg-head-color: var(--fg-muted);
+  --zg-head-border: 1px solid var(--border-dim);
+  --zg-head-cell-background: var(--bg-raised);
+  --zg-head-cell-color: var(--fg-muted);
+  --zg-head-cell-background_hover: var(--bg-hover);
+  --zg-head-cell-background_sorted: var(--bg-active);
+  --zg-head-cell-color_sorted: var(--fg);
+  --zg-head-cell-icon-color_sorted: var(--focus);
+  --zg-head-cell-font-family: var(--font-sans);
+
+  /* Toolbar housing the caption / search / pager */
+  --zg-control-bar-background: var(--bg-raised);
+  --zg-control-bar-border: 1px solid var(--border-dim);
+  --zg-caption-background: var(--bg-raised);
+  --zg-caption-color: var(--fg-muted);
+
+  /* Search */
+  --zg-search-background: var(--bg);
+  --zg-search-color: var(--fg);
+  --zg-search-border: 1px solid var(--border-dim);
+
+  /* Pager */
+  --zg-pager-background: var(--bg-raised);
+  --zg-pager-color: var(--fg-muted);
+  --zg-pager-background_button: transparent;
+  --zg-pager-color_button: var(--fg);
+  --zg-pager-background_button_active: var(--focus);
+  --zg-pager-color_button_active: #000000;
+  --zg-pager-border: 1px solid var(--border-dim);
+
+  /* Icons */
+  --zg-icon-color: var(--fg-subtle);
 }
 
 .loading::after {
