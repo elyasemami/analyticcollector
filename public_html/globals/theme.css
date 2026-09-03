@@ -82,6 +82,8 @@ body {
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  display: flex;
+  flex-direction: column;
 }
 
 h1,
@@ -348,15 +350,36 @@ header.site-header .wrap {
 
 /* ---------- Panels ---------- */
 main {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   padding: 18px 0 32px;
+}
+
+main .wrap {
+  /* .wrap centers itself via `margin: 0 auto`, which normally resolves
+     against an auto width. As a flex item here, cross-axis auto margins
+     make the browser size it to fit-content instead of stretching to
+     main's full width before clamping to max-width — pin width so it
+     stretches first, then max-width/margin:auto center it as intended. */
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .panel {
   display: none;
+  min-height: 0;
 }
 
 .panel.active {
-  display: block;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   animation: fade-in 0.12s ease-out;
 }
 
@@ -374,6 +397,10 @@ main {
   background: var(--bg);
   border: 1px solid var(--border-dim);
   border-radius: var(--radius-lg);
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .card-head {
@@ -382,6 +409,7 @@ main {
   gap: 10px;
   padding: 10px 14px;
   border-bottom: 1px solid var(--border-dim);
+  flex: none;
 }
 
 .card-head .title {
@@ -406,6 +434,10 @@ main {
 
 .card-body {
   padding: 12px;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .spacer {
@@ -470,13 +502,19 @@ main {
 .grid-shell {
   position: relative;
   overflow: auto; /* clip the grid to the card instead of letting its host
-                      background/watermark bleed past .wrap */
+                      background/watermark bleed past .wrap — ZingGrid doesn't
+                      manage its own internal scroll from CSS height alone, so
+                      this scrolls the whole grid (header/pager included) once
+                      its rows exceed the available space */
   max-width: 100%;
+  flex: 1 1 auto;
+  min-height: 420px; /* floor, matches zing-grid's own floor below */
 }
 
 zing-grid {
   display: block;
   width: 100%;
+  height: 100%;
   max-width: 100%;
   min-height: 420px; /* floor */
 

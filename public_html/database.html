@@ -109,6 +109,7 @@
                   page-size="15"
                   search
                   sort
+                  viewport-types='{"mobile":"1px","tablet-portrait":"2px","tablet-landscape":"3px","desktop":"4px","desktop-large":null}'
                 >
                   <zg-column index="id" header="id" width="90"></zg-column>
                   <zg-column
@@ -196,6 +197,7 @@
                   page-size="15"
                   search
                   sort
+                  viewport-types='{"mobile":"1px","tablet-portrait":"2px","tablet-landscape":"3px","desktop":"4px","desktop-large":null}'
                 >
                   <zg-column index="id" header="id" width="90"></zg-column>
                   <zg-column
@@ -224,7 +226,7 @@
                   ></zg-column>
                   <zg-column
                     index="nav_type"
-                    header="nav.type"
+                    header="nav type"
                     width="110"
                   ></zg-column>
                 </zing-grid>
@@ -266,6 +268,7 @@
                   page-size="25"
                   search
                   sort
+                  viewport-types='{"mobile":"1px","tablet-portrait":"2px","tablet-landscape":"3px","desktop":"4px","desktop-large":null}'
                 >
                   <zg-column index="id" header="id" width="90"></zg-column>
                   <zg-column
@@ -318,7 +321,6 @@
           } else b.removeAttribute("aria-current");
         });
         panels.forEach((p) => p.classList.toggle("active", p.id === targetId));
-        setHeights();
       }
       tabs.forEach((btn) => {
         btn.addEventListener("click", () => setActive(btn.dataset.target));
@@ -342,41 +344,6 @@
           grid.addEventListener("zg-ready", onReady, { once: true });
         });
       });
-
-      const header = document.querySelector("header");
-      const tabsRow = document.querySelector(".tabs-row");
-      const crumbs = document.querySelector(".crumbs");
-      const shells = document.querySelectorAll(".grid-shell");
-
-      function setHeights() {
-        const vh = Math.max(
-          window.innerHeight,
-          document.documentElement.clientHeight || 0,
-        );
-        const headerH = header.getBoundingClientRect().height;
-        const tabsH = tabsRow.getBoundingClientRect().height;
-        const crumbsH = crumbs.getBoundingClientRect().height;
-        const chrome = headerH + tabsH + crumbsH + 32 + 90;
-        const avail = Math.max(420, vh - chrome);
-
-        panels.forEach((panel) => {
-          const shell = panel.querySelector(".grid-shell");
-          if (!shell) return;
-          if (panel.classList.contains("active")) {
-            shell.style.height = avail + "px";
-            const grid = shell.querySelector("zing-grid");
-            if (grid) grid.style.height = "100%";
-          } else {
-            shell.style.height = "";
-          }
-        });
-      }
-
-      window.addEventListener("load", setHeights);
-      window.addEventListener("resize", () => {
-        window.requestAnimationFrame(setHeights);
-      });
-      setTimeout(setHeights, 150);
 
       setActive("panel-static");
 
