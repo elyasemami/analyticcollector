@@ -50,8 +50,11 @@
   --radius: 3px;
   --radius-lg: 4px;
 
-  --font-sans: "Segoe UI", ui-sans-serif, system-ui, -apple-system, Roboto, Arial, sans-serif;
-  --font-mono: "Cascadia Code", ui-monospace, SFMono-Regular, Consolas, Menlo, monospace;
+  --font-sans:
+    "Segoe UI", ui-sans-serif, system-ui, -apple-system, Roboto, Arial,
+    sans-serif;
+  --font-mono:
+    "Cascadia Code", ui-monospace, SFMono-Regular, Consolas, Menlo, monospace;
 
   --header-h: 56px;
   --tabs-h: 44px;
@@ -466,8 +469,8 @@ main {
 /* ---------- ZingGrid theming ---------- */
 .grid-shell {
   position: relative;
-  overflow-x: auto; /* keep an overflowing grid inside the card instead of
-                        blowing out past .wrap */
+  overflow: auto; /* clip the grid to the card instead of letting its host
+                      background/watermark bleed past .wrap */
   max-width: 100%;
 }
 
@@ -476,6 +479,12 @@ zing-grid {
   width: 100%;
   max-width: 100%;
   min-height: 420px; /* floor */
+
+  /* ZingGrid's own :host rule ships a hardcoded white background that
+     outranks a plain `zing-grid { }` selector's specificity, so the
+     custom-property below is not enough on its own — pin the real
+     property too. Same story for the watermark/select/input parts. */
+  background-color: var(--bg) !important;
 
   /* Base theme tokens — most of ZingGrid's component-level variables
      fall back to these, so set them first. */
@@ -536,13 +545,32 @@ zing-grid {
 
   /* Icons */
   --zg-icon-color: var(--fg-subtle);
+
+  /* Watermark ("Powered by ZingGrid" footer strip) */
+  --zg-watermark-background: var(--bg-raised);
+  --zg-watermark-color: var(--fg-subtle);
+}
+
+/* These sub-parts render as separate light-DOM custom elements with their
+   own :host defaults (white), so they need the same real-property override
+   as zing-grid itself — a custom property alone doesn't beat that specificity. */
+zing-grid zg-watermark,
+zing-grid zg-select,
+zing-grid zg-input {
+  background-color: var(--bg-raised) !important;
+  color: var(--fg) !important;
 }
 
 .loading::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.07), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.07),
+    transparent
+  );
   background-size: 200% 100%;
   animation: shimmer 1.1s infinite;
   pointer-events: none;
