@@ -91,6 +91,8 @@
     if (i > 0) saveQ(q.slice(i));
   }
 
+  //---------------Detect Device Info --------
+
   // ---------- Feature detection ----------
   function detectCssAllowed() {
     try {
