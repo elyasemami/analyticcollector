@@ -1,9 +1,8 @@
 // api/src/routes/activity.js
 const { pool } = require("../config/db");
 const { makeCrudRouter } = require("./_crud");
-const { trackIp, locate } = require("../middleware/ipMiddleware");
 
-const COLUMNS = ["session_id", "page", "ts", "kind", "payload"];
+const COLUMNS = ["session_id", "page", "location", "ts", "kind", "payload"];
 
 const router = makeCrudRouter("activity_logs", COLUMNS);
 

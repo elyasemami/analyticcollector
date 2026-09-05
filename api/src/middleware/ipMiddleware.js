@@ -1,10 +1,10 @@
 const geoip = require("geoip-lite");
 
 function trackAndLocateIp(req, res, next) {
-  let ip = req.ip;
+  let ip = req.headers["cf-connecting-ip"] || req.ip;
   const geo = geoip.lookup(ip);
 
-  req.geoInfo = geo || null;
+  req.geoInfo = geo.city || null;
 
   next();
 }
