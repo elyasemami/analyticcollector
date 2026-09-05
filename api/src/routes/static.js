@@ -5,6 +5,7 @@ const { makeCrudRouter } = require("./_crud");
 const COLUMNS = [
   "session_id",
   "page",
+  "location",
   "ts",
   "ua",
   "language",
