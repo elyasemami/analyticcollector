@@ -26,7 +26,7 @@ router.post("/", async (req, res, next) => {
     const doc = {
       session_id: b.sessionId || null,
       page: b.page || null,
-      location: b.geoInfo,
+      location: b.location,
       ts: b.ts || Date.now(),
       ua: b.ua || null,
       language: b.language || null,
