@@ -1,6 +1,7 @@
 // api/src/routes/static.js
 const { pool } = require("../config/db");
 const { makeCrudRouter } = require("./_crud");
+const { trackAndLocateIp } = require("../middleware/ipMiddleware");
 
 const COLUMNS = [
   "session_id",
@@ -26,7 +27,7 @@ router.post("/", async (req, res, next) => {
     const doc = {
       session_id: b.sessionId || null,
       page: b.page || null,
-      location: b.location,
+      location: req.geoInfo,
       ts: b.ts || Date.now(),
       ua: b.ua || null,
       language: b.language || null,
