@@ -13,7 +13,7 @@ router.post("/", async (req, res, next) => {
     const docs = items.map((it) => ({
       session_id: it.sessionId || null,
       page: it.page || null,
-      location: it.geoInfo,
+      location: req.geoInfo,
       ts: it.ts || Date.now(),
       kind: it.type || it.kind || "event",
       payload: it,
